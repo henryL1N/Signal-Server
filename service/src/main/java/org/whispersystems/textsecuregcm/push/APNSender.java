@@ -35,7 +35,6 @@ import org.whispersystems.textsecuregcm.util.Constants;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -66,9 +65,7 @@ public class APNSender implements Managed {
     this.accountsManager = accountsManager;
     this.bundleId        = configuration.getBundleId();
     this.sandbox         = configuration.isSandboxEnabled();
-    this.apnsClient      = new RetryingApnsClient(configuration.getPushCertificate(),
-                                                  configuration.getPushKey(),
-                                                  sandbox);
+    this.apnsClient      = null;
   }
 
   @VisibleForTesting
@@ -86,10 +83,8 @@ public class APNSender implements Managed {
     if (message.isVoip()) {
       topic = topic + ".voip";
     }
-    
-    ListenableFuture<ApnResult> future = apnsClient.send(message.getApnId(), topic,
-                                                         message.getMessage(),
-                                                         new Date(message.getExpirationTime()));
+
+    ListenableFuture<ApnResult> future = Futures.immediateFuture(new ApnResult(ApnResult.Status.SUCCESS, "reason"));
 
     Futures.addCallback(future, new FutureCallback<ApnResult>() {
       @Override
@@ -122,7 +117,7 @@ public class APNSender implements Managed {
   @Override
   public void stop() {
     this.executor.shutdown();
-    this.apnsClient.disconnect();
+//    this.apnsClient.disconnect();
   }
 
   public void setApnFallbackManager(ApnFallbackManager fallbackManager) {
